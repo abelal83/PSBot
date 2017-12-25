@@ -19,6 +19,8 @@ function Start-WorkerBot
         $backgroundBotScript
     )
 
+    #$workberBotArgs = @{SlackMessage = $SlackMessage; SlackToken = $Token; SlackUsers = $SlackUsers}
+    #[void] $PowerShell.AddArgument($workberBotArgs)
     [void] $PowerShell.AddArgument($SlackToken).AddArgument($SlackMessage).AddArgument($SlackUsers)
 
     $startTime = Get-Date

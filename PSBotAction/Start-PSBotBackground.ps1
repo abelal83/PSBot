@@ -3,6 +3,7 @@ param
     $Token,
     $Message,
     $SlackUsers
+    #$WorkberBotArgs
 )
 Get-Module PSSlackConnect, PSSlack | Remove-Module -Force
 Import-Module "$PSScriptRoot\..\PSSlack\0.0.27\PSSlack.psd1"
@@ -152,3 +153,5 @@ function Start-PSBotBackground
 #                    updated=1511548251; is_app_user=False}
 
 Start-PSBotBackground -Command $Message
+
+#Start-PSBotBackground -Command $WorkberBotArgs
