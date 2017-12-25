@@ -62,8 +62,6 @@ function Start-Main
             {
                 Write-Verbose "$slackEvent"
             }
-    
-            Start-Sleep -Milliseconds 10
 
             Remove-CompletedWorkerBot -AsyncObject $AsyncObject
         }
