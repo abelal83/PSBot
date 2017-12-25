@@ -2,7 +2,9 @@ Get-Module PSSlackConnect, PSSlack | Remove-Module -Force
 Import-Module $PSScriptRoot\..\PSSlack\0.0.27\PSSlack.psd1
 Import-Module $PSScriptRoot\..\PSSlackConnect\PSSlackConnect.psd1
 
-$_SlackToken = 'xoxb-278140501014-WWHd3sEkhEteRsTE9lY863cR'
+$_Config = Get-Content "$PSScriptRoot\PSSlackBot.json" -Raw | ConvertFrom-Json
+
+$_SlackToken = $_Config.Slack.API
 $_MessagesToIgnore = @('approved')
 
 $_SlackUsers = Get-SlackUser -Token $_SlackToken
