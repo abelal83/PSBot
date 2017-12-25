@@ -35,7 +35,7 @@ function Start-Main
         {
             $slackEvent = Receive-slackEvent -slackClientWebSocket $slackClientWebSocket
 
-            Write-Verbose "$slackEvent"
+            Write-Verbose "Slack Event received: $slackEvent"
             $slackEvent = ($slackEvent | ConvertFrom-Json)
     
             if ($slackEvent.type -eq $slackEventTypes.message -and $slackEvent.user -ne $slackRealTimeSession.self.id)
