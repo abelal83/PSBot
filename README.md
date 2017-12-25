@@ -1,0 +1,2 @@
+# PSBot
+Powershell based Bot
