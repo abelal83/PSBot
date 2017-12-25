@@ -4,7 +4,7 @@ function Start-WorkerBot
     (
         $SlackMessage,
         $SlackToken,
-        $runspacePool,
+        $RunspacePool,
         $AsyncObject,
         $SlackUsers
     )
