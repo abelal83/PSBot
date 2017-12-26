@@ -14,7 +14,7 @@ $_AsyncObject = New-Object System.Collections.Specialized.OrderedDictionary
 $scripts = Get-ChildItem "$PSScriptRoot\Public" -Filter '*.ps1'
 $scripts | ForEach-Object { Import-Module -Name $_.FullName }
 
-function Start-Main 
+function Start-PSSlackBot 
 {
     [CmdletBinding()]
     param
@@ -82,7 +82,7 @@ function Start-Main
     # if disconnected, sleep to allow resources to close then restart
     Write-Verbose 'slackClientWebSocket state is closed. Reconnecting after 5 seconds'
     Start-Sleep -Seconds 5
-    Start-Main -Token $Token -AsyncObject $AsyncObject -SlackUsers $SlackUsers -Verbose -Debug
+    Start-PSSlackBot -Token $Token -AsyncObject $AsyncObject -SlackUsers $SlackUsers -Verbose -Debug
 }
 
-Start-Main -Token $_SlackToken -AsyncObject $_AsyncObject -SlackUsers $_SlackUsers -Verbose -Debug
+Start-PSSlackBot -Token $_SlackToken -AsyncObject $_AsyncObject -SlackUsers $_SlackUsers -Verbose -Debug
