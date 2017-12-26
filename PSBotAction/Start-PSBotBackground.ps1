@@ -8,7 +8,6 @@ param
 Get-Module PSSlackConnect, PSSlack | Remove-Module -Force
 Import-Module "$PSScriptRoot\..\PSSlack\0.0.27\PSSlack.psd1"
 Import-Module "$PSScriptRoot\..\PSSlackConnect\PSSlackConnect.psd1"
-
 function Get-PSBotActionModule
 {
     $modules = Get-ChildItem "$PSScriptRoot\Public" -Filter '*.psm1'
@@ -36,7 +35,7 @@ function Get-PSBotAvailableResponse
     )
 
     $words = $Command -split ' '
-    $availableResponse = $null
+    $availableResponses = @()
     
     foreach ($word in $words) 
     {  
@@ -47,10 +46,27 @@ function Get-PSBotAvailableResponse
             return @(, $availableCommand)
         }
 
-        $availableResponse += $BotActions.Where( { $_.KeyWords.ToLower().Contains($word.ToLower()) } )
+        $availableResponse = $BotActions.Where( { $_.KeyWords.ToLower().Contains($word.ToLower()) } )
+        
+        if ($availableResponses.Count -eq 0)
+        {
+            $availableResponses += $availableResponse
+            continue
+        }
+
+        $availableResponse.ForEach({ 
+            $thisResponseId =  $_.id
+            
+            $responseExists = $availableResponses.Where( { $_.id -eq $thisResponseId } )
+
+            if ($responseExists.Count -le 0)
+            {
+                $availableResponses += $availableResponse
+            }
+        })
     }
 
-    return @(,$availableResponse)
+    return @(,$availableResponses)
 }
 
 function Invoke-PSBotAction
@@ -60,13 +76,121 @@ function Invoke-PSBotAction
         $Command
     )
 
+    try 
+    { 
+        $response = Invoke-Expression $Command.Action
+    }
+    catch 
+    {
+        $response = $_.ToString()
+    }
+    return $response
+}
+
+function Get-PSBotPermission
+{
+    param
+    (
+        $Command
+    )
+
+    $params = @{
+        Token = $Token
+        Method = 'im.list'
+    }
+
+    $rawIms = Send-SlackApi @params
+
+    $slackRealTimeSession = New-SlackSession -Token $Token
+    $slackClientWebSocket = Connect-Slack -SlackRealTimeSession $slackRealTimeSession
+
+    $ims = @()
+
+    $isAuthedUser = $false
+    $Command.AuthOverride.ForEach({
+
+        $authOverrideUserFromModule = $_;
+        $selfAuth = $Command.Users.Where( {$_.Name.ToLower() -eq $authOverrideUserFromModule.ToLower()}) | Select-Object -First 1
+
+        if ($null -ne $selfAuth)
+        { 
+            $isAuthedUser = $true 
+            return
+        }
+    })
+
+    if ($isAuthedUser)
+    {
+        return @{approved = $true}
+    }
+
+    $Command.Auth.ForEach({ 
+        $authUserFromModule = $_;
+        $authUserId = $Command.Users.Where( {$_.Name.ToLower() -eq $authUserFromModule.ToLower()}).ID
+
+        if (!$authUserId)
+         {continue }
+
+         $ims += $rawIms.ims.Where( { $_.User -eq $authUserId} ).ID
+    })
+
+    $requestingUser = $Command.Users.Where( { $_.Id.ToLower() -eq $Command.Message.User.ToLower() }).RealName
+
+    $randomApproveNumber = Get-Random -Minimum 1000 -Maximum 9999
+    $approvalText = "{0} requested approval for {1}, {2} Please reply with approve {3} or deny {3}" `
+        -f $requestingUser, $Command.Message.Text, [Environment]::NewLine, $randomApproveNumber
+
+    foreach($im in $ims)
+    {
+        Send-SlackMessage -Token $Token -Channel $im -Text $approvalText -AsUser -Verbose
+    }
+
+    try 
+    {
+        while ($slackClientWebSocket.State -eq 'Open') 
+        {
+            $slackEvent = Receive-slackEvent -slackClientWebSocket $slackClientWebSocket
+
+            $slackEvent = ($slackEvent | ConvertFrom-Json)
+
+            if ($slackEvent.type -eq $slackEventTypes.message -and $slackEvent.user -ne $slackRealTimeSession.self.id)
+            {
+                if ($slackEvent.channel.StartsWith('D'))
+                {
+                    if (!$ims.Where({ $_ -eq $slackEvent.Channel }))
+                    {
+                        continue
+                    }
+
+                    if ($slackEvent.text -eq "approve $randomApproveNumber" )
+                    {
+                        return @{approved = $true}
+                    }
+
+                    if ($slackEvent.text -eq "deny $randomApproveNumber" )
+                    {
+                        return @{approved = $false}
+                    }
+                }
+            }
+        }
+    }
+    catch
+    {
+
+    }
+    finally
+    {
+        $slackClientWebSocket.Dispose()
+    }
 }
 
 function Start-PSBotBackground
 {
     param
     (
-        $Command
+        $Command,
+        $Users
     )
 
     $availableResponses = $null  
@@ -102,56 +226,78 @@ function Start-PSBotBackground
         }
     
         $actionResponse = $availableResponses[0]
-        Send-SlackMessage -Token $Token -Channel $Command.Channel -Text $actionResponse.Response -AsUser -Verbose
+        if (![String]::IsNullOrEmpty($actionResponse.Response))
+        {
+            Send-SlackMessage -Token $Token -Channel $Command.Channel -Text $actionResponse.Response -AsUser -Verbose
+        }
         if ([string]::IsNullOrEmpty($actionResponse.Action)) 
         { return }
-        if (![string]::IsNullOrEmpty($actionResponse.Auth))
-        { Invoke-PSBotAction -Command $actionResponse }        
+        if ([string]::IsNullOrEmpty($actionResponse.Auth))
+        { 
+            $response = Invoke-PSBotAction -Command $actionResponse
+            Send-SlackMessage -Token $Token -Channel $Command.Channel -Text $response -AsUser -Verbose 
+        }
+        else
+        {
+            $actionResponse.Add('Users', $Users)
+            $actionResponse.Add('Message', $Command)
+
+            $request = Get-PSBotPermission -Command $actionResponse
+            if ($request.approved)
+            {
+                $response = Invoke-PSBotAction -Command $actionResponse
+                Send-SlackMessage -Token $Token -Channel $Command.Channel -Text $response -AsUser -Verbose
+            }
+            else 
+            {
+                Send-SlackMessage -Token $Token -Channel $Command.Channel -Text "Request denied" -AsUser -Verbose
+            }
+        }
     }
     catch 
     {
-        Send-SlackMessage Send-SlackMessage -Token $Token -Channel $Command.Channel `
-            -Text ($_.PSBase.Exception + $StackTrace) -AsUser -Verbose
-    }
-
-    # get auth    
+        Send-SlackMessage -Token $Token -Channel $Command.Channel -Text ($_.PSBase.Exception) -AsUser -Verbose
+    }   
 }
 
-#$Token = 'xoxb-278140501014-KPF4RdEnZQvOlgifDQIWSThZ'
-#$Message = 
-#@{
-#    type        = 'message'
-#    channel     = 'C857QB0D8'
-#    user        = 'U85BY6FV3'
-#    text        = '<@U8644ER0E> joke'
-#    ts          = '1514057685.000039'
-#    source_team = 'T859226E8'
-#    team        = 'T859226E8'
-#}
+$Tokenx = 'xoxb-278140501014-WWHd3sEkhEteRsTE9lY863cR'
+$Messagex = 
+@{
+    type        = 'message'
+    channel     = 'C857QB0D8'
+    user        = 'U85BY6FV3'
+    text        = '<@U8644ER0E> joke joke joke your'
+    ts          = '1514057685.000039'
+    source_team = 'T859226E8'
+    team        = 'T859226E8'
+}
 
-#ID                : U85BY6FV3
-#Name              : abu.belal
-#RealName          : Abu Belal
-#FirstName         :
-#Last_Name         :
-#Email             : abu.belal@outlook.com
-#Phone             :
-#Skype             :
-#IsBot             : False
-#IsAdmin           : True
-#IsOwner           : True
-#IsPrimaryOwner    : True
-#IsRestricted      : False
-#IsUltraRestricted : False
-#Status            :
-#TimeZoneLabel     : Pacific Standard Time
-#TimeZone          : America/Los_Angeles
-#Presence          :
-#Deleted           : False
-#Raw               : @{id=U85BY6FV3; team_id=T859226E8; name=abu.belal; deleted=False; color=9f69e7; real_name=Abu Belal; tz=America/Los_Angeles; tz_label=Pacific Standard
-#                    Time; tz_offset=-28800; profile=; is_admin=True; is_owner=True; is_primary_owner=True; is_restricted=False; is_ultra_restricted=False; is_bot=False;
-#                    updated=1511548251; is_app_user=False}
+$SlackUsersx = New-Object System.Collections.ArrayList 
+$SlackUsersx.Add(@{
+ID                = "U85BY6FV3";
+Name              = "abu.belal";
+RealName          = "Abu Belal";
+FirstName         = "";
+Last_Name         = "";
+Email             = "abu.belal@outlook.com";
+Phone             = "";
+Skype             = "";
+IsBot             = "False";
+IsAdmin           = "True";
+IsOwner           = "True";
+IsPrimaryOwner    = "True";
+IsRestricted      = "False";
+IsUltraRestricted = "False";
+Status            = "";
+TimeZoneLabel     = "Pacific Standard Time";
+TimeZone          = "America/Los_Angeles";
+Presence          = "";
+Deleted           = "False";
+Raw               = @{id="U85BY6FV3"; team_id="T859226E8"; name="abu.belal"; deleted="False"; color="9f69e7"; real_name="Abu Belal"; tz="America/Los_Angeles"; tz_label="Pacific Standard
+                    Time"; tz_offset="-28800"; profile= ""; is_admin="True"; is_owner="True"; is_primary_owner="True"; is_restricted="False"; is_ultra_restricted="False"; is_bot="False";
+                    updated=1511548251; is_app_user="False"}
+})
 
-Start-PSBotBackground -Command $Message
+Start-PSBotBackground -Command $Message -Users $SlackUsers
 
 #Start-PSBotBackground -Command $WorkberBotArgs

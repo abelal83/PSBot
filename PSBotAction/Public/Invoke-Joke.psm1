@@ -13,9 +13,9 @@ function Invoke-Joke
     return @{
         Id = 'eab15212-2155-43f6-bb3d-51de108726c5';
         Response = $joke.response;
-        KeyWords = @('joke', 'Get-Joke');
-        Action = @();
-        Auth = @();
-        AuthOverride = @()
+        KeyWords = @('joke');
+        Action = '';
+        Auth = @('abu.belal');
+        AuthOverride = @('abu.belal')
     }
 }
