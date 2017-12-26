@@ -30,7 +30,7 @@ function Start-Main
         $slackRealTimeSession = New-SlackSession -Token $Token
         $slackClientWebSocket = Connect-Slack -SlackRealTimeSession $slackRealTimeSession
         $runspacePool = New-PSBotRunspacePool
-    
+
         while ($slackClientWebSocket.State -eq 'Open') 
         {
             $slackEvent = Receive-slackEvent -slackClientWebSocket $slackClientWebSocket
@@ -68,7 +68,10 @@ function Start-Main
     }
     catch 
     {
-        Write-Error $_.PSBase.Exception
+        #Write-Error $_.Exception
+        Write-Error $_.ToString()
+        Write-Error $_.InvocationInfo.PositionMessage
+        Write-Error $_.InvocationInfo.PSCommandPath
     }
     finally
     {
