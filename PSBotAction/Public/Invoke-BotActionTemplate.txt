@@ -1,0 +1,39 @@
+Filename must be called Invoke-<Action>.psm1, a function with the same filename must be defined which returns a set number of
+key value pairs.
+
+If Action function is defined it MUST return a string and accept $Input parameter.
+
+For example, if this template was called Invoke-GetStatus.psm1 then you'd need to define Invoke-GetStatus function as below
+When Action key is given a value, this value must be defined as a function which MUST accept a base64 encoded string,
+this should then be base64 decoded into a json object. This object will contain various info which can use useful for your 
+action function
+
+function Invoke-GetStatus
+{
+    $status = Get-Process -Id $PID
+    
+    return @{
+        Id = [Guid]::NewGuid().Guid;
+        Response = $status.WorkingSet64;
+        KeyWords = @('status', 'your');
+        Action = 'Invoke-GetStatusAction';
+        Auth = @('abu.belal');
+        AuthOverride = @('abu.belal')
+    }
+}
+
+function Invoke-GetStatusAction
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory=$true, Position=1)]
+        $Base64Json
+    )
+
+    $decodedJson = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String($Base64Json))
+    
+    $jsonInput = $decodedJson | ConvertFrom-Json
+    $jsonInput.Message.text
+    return "You said {0}" -f $jsonInput.Message.text
+}

@@ -11,11 +11,11 @@ function Invoke-Joke
     }
     
     return @{
-        Id = 'eab15212-2155-43f6-bb3d-51de108726c5';
+        Id = [Guid]::NewGuid().Guid;
         Response = $joke.response;
         KeyWords = @('joke');
         Action = '';
-        Auth = @('abu.belal');
-        AuthOverride = @('abu.belal')
+        Auth = @();
+        AuthOverride = @('')
     }
 }

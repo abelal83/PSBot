@@ -76,13 +76,19 @@ function Invoke-PSBotAction
         $Command
     )
 
+    $jsonString = $Command | ConvertTo-Json
+
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($jsonString)
+    # base64 encoding as invoke-expression sends string only, incase some weird char in there 
+    $base64Json = [Convert]::ToBase64String($bytes)
+
     try 
     { 
-        $response = Invoke-Expression $Command.Action
+        $response = Invoke-Expression -Command ($Command.Action + " -Base64Json $base64Json")
     }
     catch 
     {
-        $response = $_.ToString()
+        $response = "An error occured running {0}, the error returned is '{1}'" -f  $Command.Action, $_.ToString()
     }
     return $response
 }
@@ -137,7 +143,7 @@ function Get-PSBotPermission
     $requestingUser = $Command.Users.Where( { $_.Id.ToLower() -eq $Command.Message.User.ToLower() }).RealName
 
     $randomApproveNumber = Get-Random -Minimum 1000 -Maximum 9999
-    $approvalText = "{0} requested approval for {1}, {2} Please reply with approve {3} or deny {3}" `
+    $approvalText = "Approval required. {0} requested '{1}' {2} Please reply with 'approve {3}' or 'deny {3}'" `
         -f $requestingUser, $Command.Message.Text, [Environment]::NewLine, $randomApproveNumber
 
     foreach($im in $ims)
@@ -150,7 +156,7 @@ function Get-PSBotPermission
         while ($slackClientWebSocket.State -eq 'Open') 
         {
             $slackEvent = Receive-slackEvent -slackClientWebSocket $slackClientWebSocket
-
+            
             $slackEvent = ($slackEvent | ConvertFrom-Json)
 
             if ($slackEvent.type -eq $slackEventTypes.message -and $slackEvent.user -ne $slackRealTimeSession.self.id)
@@ -177,7 +183,8 @@ function Get-PSBotPermission
     }
     catch
     {
-
+        Write-Verbose $_
+        return @{error = $true}
     }
     finally
     {
@@ -226,6 +233,8 @@ function Start-PSBotBackground
         }
     
         $actionResponse = $availableResponses[0]
+        $actionResponse.Add('Users', $Users)
+        $actionResponse.Add('Message', $Command)
         if (![String]::IsNullOrEmpty($actionResponse.Response))
         {
             Send-SlackMessage -Token $Token -Channel $Command.Channel -Text $actionResponse.Response -AsUser -Verbose
@@ -239,9 +248,6 @@ function Start-PSBotBackground
         }
         else
         {
-            $actionResponse.Add('Users', $Users)
-            $actionResponse.Add('Message', $Command)
-
             $request = Get-PSBotPermission -Command $actionResponse
             if ($request.approved)
             {
@@ -260,13 +266,13 @@ function Start-PSBotBackground
     }   
 }
 
-$Tokenx = 'xoxb-278140501014-WWHd3sEkhEteRsTE9lY863cR'
+$Tokenx = ''
 $Messagex = 
 @{
     type        = 'message'
     channel     = 'C857QB0D8'
     user        = 'U85BY6FV3'
-    text        = '<@U8644ER0E> joke joke joke your'
+    text        = '<@U8644ER0E> status'
     ts          = '1514057685.000039'
     source_team = 'T859226E8'
     team        = 'T859226E8'
