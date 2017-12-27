@@ -8,6 +8,9 @@ param
 Get-Module PSSlackConnect, PSSlack | Remove-Module -Force
 Import-Module "$PSScriptRoot\..\PSSlack\0.0.27\PSSlack.psd1"
 Import-Module "$PSScriptRoot\..\PSSlackConnect\PSSlackConnect.psd1"
+
+$scripts = Get-ChildItem "$PSScriptRoot\Private" -Filter '*.ps1'
+$scripts | ForEach-Object { Import-Module -Name $_.FullName }
 function Get-PSBotActionModule
 {
     $modules = Get-ChildItem "$PSScriptRoot\Public" -Filter '*.psm1'
