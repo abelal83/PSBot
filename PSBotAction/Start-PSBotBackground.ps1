@@ -19,11 +19,18 @@ function Get-PSBotActionModule
     $iCount = 0
     $botActions = @()
     foreach ($module in $modules) 
-    {        
-        $botActions += Invoke-Expression $module.BaseName
-        $botActions[$iCount].Add('ModuleName', $module.BaseName)
-        $botActions[$iCount].Add("Command", $module.BaseName)
-        $iCount++
+    {
+        try
+        {          
+            $botActions += Invoke-Expression $module.BaseName
+            $botActions[$iCount].Add('ModuleName', $module.BaseName)
+            $botActions[$iCount].Add("Command", $module.BaseName)
+            $iCount++
+        }
+        catch
+        {
+            Write-Error $_.ToString()
+        }
     }
     
     return $botActions
@@ -91,6 +98,7 @@ function Invoke-PSBotAction
     }
     catch 
     {
+        Write-Error $_.ToString()
         $response = "An error occured running {0}, the error returned is '{1}'" -f  $Command.Action, $_.ToString()
     }
     return $response
