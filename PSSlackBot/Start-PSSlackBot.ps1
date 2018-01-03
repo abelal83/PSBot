@@ -1,3 +1,4 @@
+Set-PSDebug -Strict
 Get-Module PSSlackConnect, PSSlack | Remove-Module -Force
 Import-Module $PSScriptRoot\..\PSSlack\0.0.27\PSSlack.psd1
 Import-Module $PSScriptRoot\..\PSSlackConnect\PSSlackConnect.psd1

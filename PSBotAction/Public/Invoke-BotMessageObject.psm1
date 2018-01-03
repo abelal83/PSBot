@@ -1,17 +1,16 @@
-function Invoke-GetStatus
+function Invoke-BotMessageObject
 {
-    $status = Get-Process -Id $PID
     return @{
         Id = [Guid]::NewGuid().Guid;
-        Response = $status.WorkingSet64;
-        KeyWords = @('status', 'your');
-        Action = 'Invoke-GetStatusAction';
+        Response = "Input object contains following";
+        KeyWords = @('');
+        Action = 'Invoke-BotMessageObjectAction';
         Auth = @('abu.belal');
-        AuthOverride = @('abu.belalx')
+        AuthOverride = @('abu.belal')
     }
 }
 
-function Invoke-GetStatusAction
+function Invoke-BotMessageObjectAction
 {
     [CmdletBinding()]
     param
@@ -23,5 +22,5 @@ function Invoke-GetStatusAction
     $decodedJson = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String($Base64Json))
     
     $jsonInput = $decodedJson | ConvertFrom-Json
-    return "OK, you asked {0}" -f $jsonInput.Message.text
+    return $jsonInput
 }
