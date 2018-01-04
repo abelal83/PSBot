@@ -1,39 +1,14 @@
-Remove-Module SevenZip -ErrorAction Continue
-Import-Module "$PSScriptRoot\SevenZip.psm1"
-
-$attachmentStream = Compress-TextToZipStream -Value "abcdefg" -ZipPassword "abc"
-
-function Send-PSBotMail
-{
-    [CmdletBinding()]
-    param
-    (
-        [System.IO.Stream] $AttachmentStream,
-        [String] $AttachmentFileName
-    )
 
 
-    # Create attachment
-    $contentType = New-Object Net.Mime.ContentType -Property @{
-        MediaType = [Net.Mime.MediaTypeNames+Application]::Zip
-        Name = $AttachmentFileName
-        }
 
-    $attachment = New-Object Net.Mail.Attachment $AttachmentStream, $contentType
-
-    # Add the attachment
-    $message.Attachments.Add($attachment)
-
-    # Send Mail via SmtpClient
-    $smtpClient.Send($message)
-}
 
 $contentType = New-Object Net.Mime.ContentType -Property @{
-    MediaType = [System.Net.Mime.MediaTypeNames+Text]::Plain
-    Name = "test.txt"
+    MediaType = [System.Net.Mime.MediaTypeNames+Application]::Zip
+    Name = "test.7z"
     }
 
-$AttachmentStream = ConvertFrom-StringToMemoryStream -InputString '12345'
+#$AttachmentStream = ConvertFrom-StringToMemoryStream -InputString '12345'
+$AttachmentStream.Position = 0
 $attachment = New-Object Net.Mail.Attachment $AttachmentStream, $contentType
 $username = "abu.belal@.com"
 $password = ""
