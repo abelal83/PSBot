@@ -12,7 +12,7 @@ function Compress-TextToZipStream
     # String of characters to compress into zip file
     #
     #.PARAMETER FileName
-    # File name to give to the compressed file, not the actual zip file as this is just a memorysteam
+    # File name to give to memorysteam created from InputString
     # Once memory stream is returned you must save and name that as whatever.7z
     #
     #.PARAMETER ZipPassword
