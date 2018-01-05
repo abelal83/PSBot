@@ -22,6 +22,7 @@ function Compress-TextToZipStream
     #.EXAMPLE
     #An example
     # $memoryStream = Compress-TextToZipStream -InputString "test content" -FileName "test.txt" -ZipPassword "pa$$word"
+    # $memoryStream will contain 7zip compressed file called test.txt protected with pa$$word
     # 
     #.NOTES
     #General notes
@@ -29,9 +30,9 @@ function Compress-TextToZipStream
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, HelpMessage = "String to compress")]
         [String] $InputString,
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, HelpMessage = "Used for giving InputString file name")]
         [string] $FileName,
         [Parameter(Mandatory = $true)]
         [String] $ZipPassword
@@ -45,7 +46,7 @@ function Compress-TextToZipStream
     $compressor = New-Object SevenZip.SevenZipCompressor
     $compressor.CompressionMethod = [SevenZip.CompressionMethod]::Lzma2
     $compressor.CompressionLevel = [SevenZip.CompressionLevel]::Normal
-    $compressor.DefaultItemName = "content.csv"
+    $compressor.DefaultItemName = $FileName
     $compressor.CompressStream($stringMemory, $compressedStream, $ZipPassword)
     $compressedStream.Position = 0
 
@@ -81,4 +82,4 @@ function ConvertFrom-StreamToString
     return $reader.ReadToEnd()
 }
 
-#Export-ModuleMember -Function Compress-TextToZipStream
+Export-ModuleMember -Function Compress-TextToZipStream

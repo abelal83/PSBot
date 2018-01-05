@@ -1,4 +1,4 @@
-Import-Module "$PSScriptRoot\..\SevenZip.psm1"
+Import-Module "$PSScriptRoot\..\Invoke-SevenZip\Invoke-SevenZip.psm1"
 
 function Send-PSBotMail
 {
@@ -7,21 +7,32 @@ function Send-PSBotMail
     (
         [Parameter(Mandatory = $true)]
         [String] $From,
+
         [Parameter(Mandatory = $true)]
         [String] $To,
-        [Parameter(Mandatory = $false)]
+
+
+
+        [Parameter(Mandatory = $false, HelpMessage = "string content used to create a file, resulting file is added to 7zip file")]
         [String] $AttachmentContent,
-        [Parameter(Mandatory = $false)]
+
+        [Parameter(Mandatory = $false, HelpMessage = "Name to give to file generated from AttachmentContent")]
         [String] $AttachmentContentFileName,
+
         [String] $ZipPassword,
-        [Parameter( Mandatory = $false)]
+
+        [Parameter( Mandatory = $false, HelpMessage = "Name to give to generated 7zip file, this is the file that gets attached")]
         [String] $AttachmentFileName,
-        [String] $SmtpHost = "smtpapp.investec.co.uk",
-        [int] $SmtpPort = 25,
+
+        [Parameter(Mandatory = $true)]
+        [String] $SmtpHost,
+
+        [int] $SmtpPort = 587,
+
         [Parameter(ParameterSetName = "Credential", Mandatory = $false)]
         [string] $Username = $null,
         [Parameter(ParameterSetName = "Credential", Mandatory = $false)]
-        [securestring] $Password = $null
+        [string] $PasswordForMailAccount = $null
     )
 
     $attachmentStream = Compress-TextToZipStream -InputString $AttachmentContent -ZipPassword $ZipPassword -FileName $AttachmentContentFileName
@@ -39,8 +50,12 @@ function Send-PSBotMail
     $message.From = New-Object System.Net.Mail.MailAddress($From)
 
     $smtpClient = New-Object System.Net.Mail.SmtpClient
-    #$smtpClient.Credentials = New-Object System.Net.NetworkCredential($username, $password)
-    #$smtpClient.Port = 587
+    if ($PasswordForMailAccount -ne $null)
+    {
+        $smtpClient.Credentials = New-Object System.Net.NetworkCredential($Username, $PasswordForMailAccount)
+    }
+    
+    $smtpClient.Port = $SmtpPort
     $smtpClient.EnableSsl = $true
     $smtpClient.Host = $SmtpHost
 
