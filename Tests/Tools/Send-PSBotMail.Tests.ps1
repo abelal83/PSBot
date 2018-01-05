@@ -6,7 +6,7 @@ $sutFolder = $sut -replace '.psm1', ''
 Remove-Module -Name $sutFolder -ErrorAction Ignore
 Import-Module $here\..\..\Tools\\$sutFolder\$sut
 
-Describe "Invoke-BotMessageObject" {
+Describe "$sutFolder" {
 
     It  "Should send an email" {
 
