@@ -11,8 +11,6 @@ function Send-PSBotMail
         [Parameter(Mandatory = $true)]
         [String] $To,
 
-
-
         [Parameter(Mandatory = $false, HelpMessage = "string content used to create a file, resulting file is added to 7zip file")]
         [String] $AttachmentContent,
 
