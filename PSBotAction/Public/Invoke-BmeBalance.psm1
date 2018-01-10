@@ -46,9 +46,10 @@ function Get-BmeBalance
     }
     catch 
     {
-        return "Error return from BME $($_.ToString())"
+        #return "Error return from BME $($_.ToString())"
     }
     
+    $result = "account not found"
     $emailTo = $jsonInput.Users.Where( { $_.ID -eq $jsonInput.Message.user } ).Email
     $password = New-RandomPassword -Length 12 -Lowercase -Uppercase -Numbers -Symbols
 

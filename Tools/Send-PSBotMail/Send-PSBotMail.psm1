@@ -48,13 +48,13 @@ function Send-PSBotMail
     $message.From = New-Object System.Net.Mail.MailAddress($From)
 
     $smtpClient = New-Object System.Net.Mail.SmtpClient
-    if ($PasswordForMailAccount -ne $null)
+    if ($PasswordForMailAccount -ne "")
     {
         $smtpClient.Credentials = New-Object System.Net.NetworkCredential($Username, $PasswordForMailAccount)
     }
     
     $smtpClient.Port = $SmtpPort
-    $smtpClient.EnableSsl = $true
+    #$smtpClient.EnableSsl = $true
     $smtpClient.Host = $SmtpHost
 
     $smtpClient.Send($message)

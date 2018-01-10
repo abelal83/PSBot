@@ -47,6 +47,7 @@ function Compress-TextToZipStream
     $compressor.CompressionMethod = [SevenZip.CompressionMethod]::Lzma2
     $compressor.CompressionLevel = [SevenZip.CompressionLevel]::Normal
     $compressor.DefaultItemName = $FileName
+    $compressor.EncryptHeaders = $true
     $compressor.CompressStream($stringMemory, $compressedStream, $ZipPassword)
     $compressedStream.Position = 0
 
