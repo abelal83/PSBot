@@ -132,8 +132,7 @@ function Get-PSBotPermission
 
         if ($null -ne $selfAuth)
         { 
-            $isAuthedUser = $true 
-            return
+            $isAuthedUser = $true
         }
     })
 
@@ -146,10 +145,10 @@ function Get-PSBotPermission
         $authUserFromModule = $_;
         $authUserId = $Command.Users.Where( {$_.Name.ToLower() -eq $authUserFromModule.ToLower()}).ID
 
-        if (!$authUserId)
-         {continue }
-
-         $ims += $rawIms.ims.Where( { $_.User -eq $authUserId} ).ID
+        if ($authUserId)
+         { 
+            $ims += $rawIms.ims.Where( { $_.User -eq $authUserId} ).ID
+         }
     })
 
     $requestingUser = $Command.Users.Where( { $_.Id.ToLower() -eq $Command.Message.User.ToLower() }).RealName

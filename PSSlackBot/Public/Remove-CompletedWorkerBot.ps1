@@ -18,11 +18,12 @@ function Remove-CompletedWorkerBot
                 if ($AsyncObject[$i].Powershell.Streams.Error.Count -gt 0)
                 {                    
                     Write-Error "An error occured within worker bot, this is likely to be within an action module"
-                    #$AsyncObject[$i].Powershell.Streams.Error
+                    Write-Verbose $AsyncObject[$i].Powershell.Streams.Error
                 }
                 $AsyncObject[$i].Powershell.Dispose()
                 #$threadResponse = $AsyncObject[$i].Powershell.EndInvoke($AsyncObject[$i].State) # if exception is thrown this kills session
                 #Write-Verbose $threadResponse.ToString()
+                #Write-Verbose $AsyncObject[$i].Powershell.Streams.Verbose
                 $AsyncObject.Remove($AsyncObject[$i].Powershell.InstanceId.Guid)
             }
         }

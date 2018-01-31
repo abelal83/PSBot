@@ -4,13 +4,13 @@ function Invoke-BmeBalance
         Id = [Guid]::NewGuid().Guid;
         Response = "Approval required to run this action, sending request to approvers.";
         KeyWords = @('bme', 'balance');
-        Action = 'Get-BmeBalance';
+        Action = 'Invoke-BmeBalanceAction';
         Auth = @('abelal');
         AuthOverride = @('seanog')
     }
 }
 
-function Get-BmeBalance
+function Invoke-BmeBalanceAction
 {
     [CmdletBinding()]
     param

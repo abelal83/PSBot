@@ -3,11 +3,11 @@ function Invoke-BotStatus
     $status = Get-Process -Id $PID
     return @{
         Id = [Guid]::NewGuid().Guid;
-        Response = $status.WorkingSet64;
+        Response = "approval required for invoke-botstatusaction";
         KeyWords = @('status', 'your');
-        Action = 'Invoke-GetStatusAction';
-        Auth = @('abu.belal');
-        AuthOverride = @('abu.belalx')
+        Action = 'Invoke-BotStatusAction';
+        Auth = @();
+        AuthOverride = @()
     }
 }
 
